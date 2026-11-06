@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Emergency Box Tracking</title>
+<meta name="description" content="ระบบติดตามกล่องยาฉุกเฉิน กลุ่มงานเภสัชกรรม รพ.ศีขรภูมิ">
+<meta name="theme-color" content="#1A3260">
+
+<!-- ข้อมูลแอปสำหรับ Android / Chrome -->
+<link rel="manifest" href="manifest.webmanifest">
+<!-- ข้อมูลแอปสำหรับ iPhone / iPad -->
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Emer Tracking">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#0D1F42; --blue-800:#1A3260; --blue-700:#1E5FAD; --blue-600:#2D7DD2; --blue-50:#EAF3FB;
+    --ink:#1A2847; --ink-soft:#4A6080; --ink-mute:#8AA0BC; --line:#D4DFEE; --ok:#1A8A57;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:'Kanit',sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--blue-900) 0%,var(--blue-800) 45%,var(--blue-700) 100%);}
+
+  /* ===== หน้าเปิดแอป (เปิดผ่านเบราว์เซอร์) ===== */
+  .landing{min-height:100%;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));}
+  .card{background:white;border-radius:24px;box-shadow:0 12px 40px rgba(13,31,66,.25);width:100%;max-width:440px;padding:32px clamp(20px,6vw,36px) 26px;text-align:center;}
+  .logo{width:132px;height:132px;border-radius:50%;display:block;margin:0 auto 14px;}
+  h1{font-size:22px;font-weight:600;line-height:1.3;}
+  .sub{font-size:13px;color:var(--ink-soft);font-weight:300;margin-top:4px;}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:12px;border:none;font-family:inherit;font-size:16px;font-weight:500;cursor:pointer;text-decoration:none;transition:transform .15s,box-shadow .15s;}
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:linear-gradient(135deg,var(--blue-700),var(--blue-600));color:white;box-shadow:0 4px 16px rgba(29,95,173,.35);margin-top:22px;}
+  .btn-install{background:white;color:var(--blue-700);border:1.5px solid var(--blue-600);margin-top:10px;}
+  .howto{margin-top:20px;text-align:left;background:var(--blue-50);border-radius:14px;padding:14px 16px;font-size:13.5px;line-height:1.75;}
+  .howto h2{font-size:14px;font-weight:600;color:var(--blue-800);margin-bottom:4px;}
+  .howto ol{padding-left:20px;}
+  .howto b{font-weight:500;color:var(--blue-800);}
+  .share{display:inline-block;width:18px;height:18px;vertical-align:-3px;}
+  .tabs{display:flex;gap:6px;margin-bottom:8px;}
+  .tab{flex:1;padding:6px;border-radius:8px;border:1px solid var(--line);background:white;font-family:inherit;font-size:12.5px;color:var(--ink-soft);cursor:pointer;}
+  .tab.on{background:var(--blue-800);border-color:var(--blue-800);color:white;}
+  .foot{margin-top:20px;font-size:11.5px;color:var(--ink-mute);font-weight:300;}
+  .done{color:var(--ok);font-size:13.5px;margin-top:10px;display:none;}
+
+  /* ===== โหมดแอป (เปิดจากไอคอนหน้าจอหลัก) ===== */
+  .appframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#F0F4FA;display:none;}
+  .splash{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:white;z-index:2;transition:opacity .35s;}
+  .splash img{width:112px;height:112px;}
+  .spin{width:28px;height:28px;border:3px solid var(--blue-50);border-top-color:var(--blue-600);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .splash .slow{display:none;font-size:13px;color:var(--ink-soft);text-align:center;padding:0 24px;}
+  .splash .slow a{color:var(--blue-700);}
+  body.standalone .landing{display:none;}
+  body.standalone .appframe{display:block;}
+  body.standalone .splash{display:flex;}
+</style>
+</head>
+<body>
+
+<!-- หน้าเปิดแอป: แสดงเมื่อเปิดผ่านเบราว์เซอร์ พร้อมวิธีเพิ่มไอคอนลงหน้าจอหลัก -->
+<main class="landing">
+  <div class="card">
+    <img class="logo" src="icons/icon-512.png" alt="Emergency Box Tracking">
+    <h1>Emergency Box Tracking</h1>
+    <p class="sub">ระบบติดตามกล่องยาฉุกเฉิน · โรงพยาบาลศีขรภูมิ</p>
+
+    <a class="btn btn-primary" id="openBtn" href="#">เข้าสู่ระบบ →</a>
+    <button class="btn btn-install" id="installBtn" type="button" style="display:none;">ติดตั้งแอปบนอุปกรณ์นี้</button>
+    <p class="done" id="installedMsg">✓ ติดตั้งแล้ว เปิดได้จากไอคอนบนหน้าจอหลัก</p>
+
+    <div class="howto" id="howto">
+      <h2>เพิ่มไอคอนลงหน้าจอหลัก</h2>
+      <div class="tabs">
+        <button class="tab" data-os="ios" type="button">iPhone / iPad</button>
+        <button class="tab" data-os="android" type="button">Android</button>
+      </div>
+      <ol id="steps-ios">
+        <li>เปิดหน้านี้ด้วย <b>Safari</b></li>
+        <li>แตะปุ่มแชร์
+          <svg class="share" viewBox="0 0 24 24" fill="none" stroke="#1E5FAD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg>
+          ด้านล่างจอ</li>
+        <li>เลือก <b>เพิ่มไปยังหน้าจอโฮม</b> แล้วแตะ <b>เพิ่ม</b></li>
+      </ol>
+      <ol id="steps-android" style="display:none;">
+        <li>เปิดหน้านี้ด้วย <b>Chrome</b></li>
+        <li>แตะเมนู <b>⋮</b> มุมขวาบน</li>
+        <li>เลือก <b>เพิ่มลงในหน้าจอหลัก</b> หรือ <b>ติดตั้งแอป</b></li>
+      </ol>
+    </div>
+
+    <p class="foot">กลุ่มงานเภสัชกรรม รพ.ศีขรภูมิ</p>
+  </div>
+</main>
+
+<!-- โหมดแอป: เปิดระบบ CPRBOX เต็มจอ -->
+<div class="splash" id="splash">
+  <img src="icons/icon-512.png" alt="">
+  <div class="spin"></div>
+  <p class="slow" id="slowMsg">ระบบใช้เวลาโหลดนานกว่าปกติ<br><a id="slowLink" href="#">แตะที่นี่เพื่อเปิดในเบราว์เซอร์</a></p>
+</div>
+<iframe class="appframe" id="appFrame" title="Emergency Box Tracking" allow="clipboard-write"></iframe>
+
+<script>
+  // ===== ตั้งค่า =====
+  // ลิงก์เว็บแอป CPRBOX (Deploy จาก Google Apps Script) — ถ้า Deploy ใหม่แล้วลิงก์เปลี่ยน ให้แก้ที่บรรทัดนี้บรรทัดเดียว
+  var APP_URL = 'https://script.google.com/macros/s/AKfycbwEeyiTAd7JvB8wQgDgET1jTH5LSYsxm9rHe-k0dUGmOn9dNnl6M-E7CBzwuAp1i5eN/exec';
+  // วิธีเปิดระบบเมื่อแตะไอคอน: 'frame' = เปิดเต็มจอในแอป (แนะนำ) | 'redirect' = ไปยังหน้าเว็บแอปโดยตรง
+  // ถ้า Deploy ตั้ง "Who has access" ให้ต้องล็อกอิน Google ก่อน ให้เปลี่ยนเป็น 'redirect'
+  var OPEN_MODE = 'frame';
+
+  // ===== ตรวจว่าเปิดจากไอคอนหน้าจอหลัก (โหมดแอป) หรือจากเบราว์เซอร์ =====
+  var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  document.getElementById('openBtn').href = APP_URL;
+  document.getElementById('slowLink').href = APP_URL;
+
+  if (isStandalone) {
+    if (OPEN_MODE === 'redirect') {
+      window.location.replace(APP_URL);
+    } else {
+      document.body.classList.add('standalone');
+      var frame = document.getElementById('appFrame');
+      var splash = document.getElementById('splash');
+      var slowTimer = setTimeout(function(){ document.getElementById('slowMsg').style.display = 'block'; }, 12000);
+      frame.addEventListener('load', function(){
+        clearTimeout(slowTimer);
+        splash.style.opacity = '0';
+        setTimeout(function(){ splash.style.display = 'none'; }, 350);
+      });
+      frame.src = APP_URL;
+    }
+  }
+
+  // ===== แท็บวิธีติดตั้ง: เลือกให้ตรงกับอุปกรณ์อัตโนมัติ =====
+  function showOS(os){
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-os') === os); });
+    document.getElementById('steps-ios').style.display = os === 'ios' ? '' : 'none';
+    document.getElementById('steps-android').style.display = os === 'android' ? '' : 'none';
+  }
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){ showOS(t.getAttribute('data-os')); });
+  });
+  showOS(isIOS ? 'ios' : 'android');
+
+  // ===== ปุ่มติดตั้งแอป (Android / Chrome / Edge บนคอมพิวเตอร์) =====
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();               // เก็บไว้ก่อน แสดงเมื่อผู้ใช้กดปุ่มเอง
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'flex';
+  });
+  document.getElementById('installBtn').addEventListener('click', function(){
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(){ deferredPrompt = null; });
+  });
+  window.addEventListener('appinstalled', function(){
+    document.getElementById('installBtn').style.display = 'none';
+    document.getElementById('installedMsg').style.display = 'block';
+  });
+
+  // ===== service worker: ทำให้ติดตั้งเป็นแอปได้ และเปิดหน้าแรกได้เร็ว =====
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  }
+</script>
+</body>
+</html>
