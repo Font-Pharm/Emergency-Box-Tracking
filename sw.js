@@ -1,6 +1,6 @@
 // Service worker ขนาดเล็ก: เก็บหน้าเปิดแอปและไอคอนไว้ในเครื่อง ให้แอปเปิดขึ้นได้แม้สัญญาณไม่ดี
 // ไม่ได้เก็บข้อมูลระบบ CPRBOX — ข้อมูลกล่องยาโหลดจาก Google Apps Script ทุกครั้ง
-const CACHE = 'ebt-launcher-v1';
+const CACHE = 'ebt-launcher-v2'; // v2: เว้นแถบสถานะ iPhone
 const FILES = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 
